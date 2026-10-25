@@ -333,6 +333,33 @@ tool_responses:
       status: ONGOING
 ```
 
+默认情况下，Mock Server 在 `tools/list` 中为每个工具返回占位描述（`Mocked MCP tool <name>`）和开放的输入 schema（`{"type": "object", "additionalProperties": true}`），Agent 据此选择工具的方式可能与面对真实 Server 时不同。可选的 `tools` 映射可以为每个工具补回真实的元数据：
+
+```yaml
+tools:
+  create_publish_plan_simple:
+    description: Create a publish plan for a project release.
+    input_schema:
+      type: object
+      properties:
+        name: {type: string}
+        planReleaseDate: {type: string}
+      required: [name]
+tool_responses:
+  create_publish_plan_simple:
+    default:
+      id: 999
+      name: "{{params.name}}"
+      status: ONGOING
+```
+
+`tools` 的规则：
+
+- `description` 和 `input_schema` 对每个工具都是可选的，缺省的字段沿用上述默认值。不写 `tools` 的 fixture 行为与之前完全一致。
+- `tools` 只放元数据，响应内容仍然写在 `tool_responses` 里，且 `tools` 中的每个名称都必须同时出现在 `tool_responses` 中。
+- `input_schema` 必须是 `type: object` 的映射，因为 MCP 要求输入 schema 是对象类型；更深层的 JSON Schema 不做校验。
+- schema 只用于声明，Mock Server 不会按它校验调用参数：参数缺失或多余的调用仍然返回 `tool_responses` 中的内容。
+
 环境变量引用支持 `${VAR}` 和完整值 `$VAR` 两种形式，变量名必须匹配 `[A-Za-z_][A-Za-z0-9_]*`。`required_env` 会把变量注入 Agent 运行环境；`headers` 中完整的环境变量引用会额外记录变量名，供 Agent 安装 MCP 时选择合适的传递方式。
 
 #### 用例级 mocked MCP 覆盖

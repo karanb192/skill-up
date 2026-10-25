@@ -369,6 +369,33 @@ tool_responses:
       status: ONGOING
 ```
 
+By default the mock advertises every tool in `tools/list` with a placeholder description (`Mocked MCP tool <name>`) and an open input schema (`{"type": "object", "additionalProperties": true}`), so the Agent may pick tools differently than it would against the real server. An optional `tools` map restores the real metadata per tool:
+
+```yaml
+tools:
+  create_publish_plan_simple:
+    description: Create a publish plan for a project release.
+    input_schema:
+      type: object
+      properties:
+        name: {type: string}
+        planReleaseDate: {type: string}
+      required: [name]
+tool_responses:
+  create_publish_plan_simple:
+    default:
+      id: 999
+      name: "{{params.name}}"
+      status: ONGOING
+```
+
+Rules for `tools`:
+
+- `description` and `input_schema` are both optional per tool; a missing field keeps the default above. A fixture without `tools` behaves exactly as before.
+- `tools` carries metadata only; responses stay under `tool_responses`, and every name under `tools` must also appear there.
+- `input_schema` must be a mapping with `type: object`, because MCP requires an object schema. Nothing deeper is validated.
+- The schema is advertised only. The mock does not check call arguments against it, so a call with missing or extra arguments still returns the `tool_responses` entry.
+
 Environment-variable references support both `${VAR}` and full-value `$VAR` forms; the variable name must match `[A-Za-z_][A-Za-z0-9_]*`. Variables listed in `required_env` are injected into the Agent process; full env-var references inside `headers` are also recorded by name so the Agent can pick the right transport mechanism when installing the MCP server.
 
 #### Per-case mocked MCP overrides
